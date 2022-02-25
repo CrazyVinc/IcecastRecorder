@@ -1,16 +1,18 @@
 const http = require("http");
 const os = require("os");
 var path = require("path");
-const { spawn, fork } = require("child_process");
-var fs = require("fs");
+const { exec } = require("child_process");
+const fs = require("fs");
 const {
     promises: { readdir },
 } = require("fs");
 var cp = require("child_process");
+var pathToFfmpeg = require('ffmpeg-static');
 
+
+let config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
 var express = require("express");
 let ejs = require("ejs");
-var bodyParser = require("body-parser");
 
 var moment = require("moment");
 
@@ -27,7 +29,7 @@ var RunExternS;
 function platform2() {
     var platform = os.platform();
     if (platform == "win32") {
-        return "windows.cmd";
+        return "windows";
     } else if (platform == "linux") {
         return "linux.sh";
     } else {
@@ -38,13 +40,13 @@ function platform2() {
 function RunExtern() {
     FFMPEGStarted = new Date();
     RunningFFMPEG = true;
-    RunExternS = spawn("./bin/"+platform2());
+    RunExternS = exec(pathToFfmpeg+ ' -i '+config.Stream+' -c copy -f segment -segment_time 3600 -strftime 1 -reset_timestamps 1 -segment_format mp3 "Recs/%Y/%m/%d/%H-%M-%S.mp3"');
     RunExternS.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
     });
     
     RunExternS.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
+        console.log(`stderr: ${data}`);
     });
     
     RunExternS.on('close', (code) => {
@@ -54,35 +56,46 @@ function RunExtern() {
         RunExtern();
     });
 }
-RunExtern();
 
-var RunRecorder = new CronJob.CronJob('59 59 * * * *', function() {
+RunExtern();
+var RunRecorder = new CronJob.CronJob('00 00 * * * *', function() {
+    if(!RunningFFMPEG) {
+        RunExtern();
+        console.log("start")
+        return;
+    }
     let HH = FFMPEGStarted.getHours();
     let mm = FFMPEGStarted.getMinutes();
     let SS = FFMPEGStarted.getSeconds();
     
     if(mm !== 0 && SS !== 0) {
-        RunExternS.kill('SIGHUP');
+        RunExternS.kill();
         RunExtern();
     }
-}, null, true, null, null, true);
+}, null, true);
 
-
-var job = new CronJob.CronJob('30 57 * * * *', function() {
-    let date_ob = new Date();
-    let DD = ("0" + date_ob.getDate()).slice(-2);
+var job = new CronJob.CronJob('0 55 * * * *', function() {
+    let date_ob = moment().add(5, 'minutes');
+    let DD = ("0" + date_ob.date()).slice(-2);
     // current month
-    let MM = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+    let MM = ("0" + (date_ob.month() + 1)).slice(-2);
     // current year
-    let YYYY = date_ob.getFullYear();
+    let YYYY = date_ob.year();
     
     // prints date in YYYY-MM-DD format
-    var RecPath = [
-        "Recs/"+YYYY+"/"+MM+"/"+DD,
-        "Recs/"+(YYYY+1)+"/"+MM+"/"+DD,
-        "Recs/"+YYYY+"/"+(MM+1)+"/"+DD,
-        "Recs/"+YYYY+"/"+MM+"/"+(DD+1),
-    ]
+    var RecPath = ["Recs/"+YYYY+"/"+MM+"/"+DD]
+
+    for (let i = 0; i < 2; i++) {
+        let date_ob = moment().add(i, 'days');
+        let DD = ("0" + date_ob.date()).slice(-2);
+        // current month
+        let MM = ("0" + (date_ob.month() + 1)).slice(-2);
+        // current year
+        let YYYY = date_ob.year();
+        RecPath.push("Recs/"+YYYY+"/"+MM+"/"+DD)
+    }
+
+
     RecPath.forEach(RecPath => {
         if (!fs.existsSync(RecPath)){
             console.log("Make folder");
