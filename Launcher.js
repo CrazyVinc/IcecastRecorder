@@ -12,6 +12,8 @@ function launch() {
     child.on("message", function (msg) {
         msg = JSON.parse(msg) || {msg: msg};
         if(msg.msg == "restart index") {
+            child.kill();
+            launch();
         } else if(msg.msg == "run fork") {
             console.log("Executing fork: ", msg.exec)
             child.kill();

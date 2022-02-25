@@ -21,7 +21,6 @@ const getFiles = async (source) =>
         .map((dirent) => dirent.name);
 
 app.get("/", async function (req, res) {
-    console.log(await getDirectories("./Recs"));
     res.render("YYYY", { Years: await getDirectories("./Recs") });
 });
 app.get("/:YYYY([0-9]{4})", async function (req, res) {
