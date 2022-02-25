@@ -21,12 +21,12 @@ function launch() {
             child.kill();
             RunExternS = RunExtern(msg.exec);
         } else {
-            console.log(`Message from LED Controller: ${msg}`);
+            console.log(`Message from Icecast Recorder: ${msg}`);
         }
     });
 
     child.on("close", function (code) {
-        console.log("Led Controller exited with code " + code);
+        console.log("Icecast Recorder exited with code " + code);
     });
 }
 
@@ -39,12 +39,12 @@ function forkJS(exec) {
             console.log("Launching index..")
             child = launch();
         } else {
-            console.log(`Message from LED Controller: ${msg}`);
+            console.log(`Message from Icecast Recorder: ${msg}`);
         }
     });
 
     child.on("close", function (code) {
-        console.log("Led Controller exited with code " + code);
+        console.log("Icecast Recorder exited with code " + code);
     });
 }
 function RunExtern(exec) {
