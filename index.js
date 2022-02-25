@@ -1,6 +1,4 @@
 const http = require("http");
-const os = require("os");
-var path = require("path");
 const { exec } = require("child_process");
 const fs = require("fs");
 const {
@@ -9,6 +7,7 @@ const {
 var cp = require("child_process");
 var pathToFfmpeg = require('ffmpeg-static');
 
+require('console-stamp')(console, 'HH:MM:ss.l');
 
 let config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
 var express = require("express");
@@ -26,17 +25,6 @@ var RunningFFMPEG = false;
 var FFMPEGStarted;
 var RunExternS;
 
-function platform2() {
-    var platform = os.platform();
-    if (platform == "win32") {
-        return "windows";
-    } else if (platform == "linux") {
-        return "linux.sh";
-    } else {
-        return platform;
-    }
-}
-
 function RunExtern() {
     FFMPEGStarted = new Date();
     RunningFFMPEG = true;
@@ -44,6 +32,7 @@ function RunExtern() {
     RunExternS.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
     });
+    console.log("started")
     
     RunExternS.stderr.on('data', (data) => {
         console.log(`stderr: ${data}`);
@@ -57,11 +46,9 @@ function RunExtern() {
     });
 }
 
-RunExtern();
 var RunRecorder = new CronJob.CronJob('00 00 * * * *', function() {
     if(!RunningFFMPEG) {
         RunExtern();
-        console.log("start")
         return;
     }
     let HH = FFMPEGStarted.getHours();
@@ -72,7 +59,7 @@ var RunRecorder = new CronJob.CronJob('00 00 * * * *', function() {
         RunExternS.kill();
         RunExtern();
     }
-}, null, true);
+}, null, true, null, null, true);
 
 var job = new CronJob.CronJob('0 55 * * * *', function() {
     let date_ob = moment().add(5, 'minutes');
@@ -110,62 +97,8 @@ const server = http.createServer(app);
 
 app.set("view engine", "ejs");
 
+app.use("/", require("./src/routes"));
 app.use("/assets", express.static("assets"));
-
-const getDirectories = async (source) =>
-    (await readdir(source, { withFileTypes: true }))
-        .filter((dirent) => dirent.isDirectory())
-        .map((dirent) => dirent.name);
-const getFiles = async (source) =>
-    (await readdir(source, { withFileTypes: true }))
-        .filter((dirent) => dirent.isFile())
-        .map((dirent) => dirent.name);
-
-app.get("/", async function (req, res) {
-    console.log(await getDirectories("./Recs"));
-    res.render("YYYY", { Years: await getDirectories("./Recs") });
-});
-app.get("/:YYYY([0-9]{4})", async function (req, res) {
-    res.render("MM", {
-        Months: await getDirectories("./Recs/"+req.params.YYYY),
-        Selected: {
-            YYYY: req.params.YYYY
-        }
-    });
-});
-app.get("/:YYYY([0-9]{4})/:MM([0-9]{2})", async function (req, res) {
-    res.render("DD", {
-        Days: await getDirectories("./Recs/"+req.params.YYYY+"/"+req.params.MM),
-        Selected: {
-            YYYY: req.params.YYYY,
-            MM: req.params.MM
-        }
-    });
-});
-app.get("/:YYYY([0-9]{4})/:MM([0-9]{2})/:DD([0-9]{2})", async function (req, res) {
-    res.render("audio", {
-        Days: await getFiles("./Recs/"+req.params.YYYY+"/"+req.params.MM+"/"+req.params.DD),
-        Selected: {
-            YYYY: req.params.YYYY,
-            MM: req.params.MM,
-            DD: req.params.DD
-        }
-    });
-});
-
-app.get("/:YYYY([0-9]{4})/:MM([0-9]{2})/:DD([0-9]{2})/:mp3", async function (req, res) {
-    var RecPath = "Recs/"+req.params.YYYY+"/"+req.params.MM+"/"+req.params.DD+"/"+req.params.mp3;
-    if(fs.existsSync(RecPath)) {
-        res.sendFile(path.resolve(RecPath))
-    } else {
-        res.status(404).render("errors", { error: { code: "File not found!" } });
-    }
-});
-
-app.get("*", function (req, res) {
-    res.status(404).render("errors", { error: { code: "404" } });
-    // res.redirect("/home");
-});
 
 app.set("port", 8085);
 server.listen(app.get("port"), () => {

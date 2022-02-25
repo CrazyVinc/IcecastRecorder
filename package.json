@@ -9,6 +9,7 @@
   "author": "VLGNL",
   "license": "ISC",
   "dependencies": {
+    "console-stamp": "^3.0.4",
     "cron": "^1.8.2",
     "ejs": "^3.1.6",
     "express": "^4.17.3",
