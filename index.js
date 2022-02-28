@@ -1,3 +1,4 @@
+var kill  = require('tree-kill');
 const http = require("http");
 const { exec } = require("child_process");
 const fs = require("fs");
@@ -58,6 +59,7 @@ function RunExtern() {
         console.log(`Auto Updater exited with code ${code}`);
         RunningFFMPEG = false;
         job.start();
+        kill(RunExternS.pid);
         RunExtern();
     });
 }
@@ -69,7 +71,7 @@ var RunRecorder = new CronJob.CronJob(
             RunExtern();
             return;
         }
-        process.send(JSON.stringify({ msg: "restart index" }));
+        kill(RunExternS.pid);
     },
     null,
     true,
