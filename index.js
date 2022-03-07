@@ -31,6 +31,7 @@ function RunExtern() {
     RunningFFMPEG = true;
     var time = {
         MM: ("0" + (moment().month() + 1)).slice(-2),
+        DD: ("0" + (moment().date())).slice(-2),
         HH: ("0" + (moment().hour())).slice(-2),
         Min: ("0" + (moment().minute())).slice(-2),
         SS: ("0" + (moment().second())).slice(-2)
@@ -42,7 +43,7 @@ function RunExtern() {
             ' "Recs/' +
             moment().year() + "/" + 
             time.MM + "/" +
-            moment().date() + "/" +
+            time.DD + "/" +
             time.HH + ';' + time.Min + '!'+time.SS
              +'.mp3"'
     );
