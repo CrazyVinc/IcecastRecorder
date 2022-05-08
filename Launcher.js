@@ -1,67 +1,55 @@
-const { spawn, fork } = require("child_process");
-const fs = require('fs');
+const { fork } = require("child_process");
 
 console.log("Starting Icecast Recorder.");
 
-let RunExternS;
-let ForkJSS;
-let child;
+let recorder;
+var running = false;
+
+const myArgs = process.argv.slice(2);
+
+if (myArgs.length >= 1) {
+    console.log(myArgs);
+    //? Cancel run if argument 0 is not a number
+    if(isNaN(myArgs[0])) {
+        console.error("Argument 0 must be a number.");
+        return;
+    }
+    setTimeout(function () {
+        //? Send a shutdown signal to the Recorder.
+        running = true;
+        recorder.send(JSON.stringify({msg: "shutdown"}));
+    }, myArgs[0] * 1000);
+}
+
+function makeJSON(jsonObj) {
+    try {
+        return JSON.parse(jsonObj);
+    } catch (e) {
+        return {msg: jsonObj};
+    }
+}
 
 function launch() {
-    child = fork("./index.js");
-    child.on("message", function (msg) {
-        msg = JSON.parse(msg) || {msg: msg};
-        if(msg.msg == "restart index") {
-            child.kill();
+    recorder = fork("./index.js");
+    recorder.on("message", function (msg) {
+        msg = makeJSON(msg);
+        if(msg.msg == "restart") {
+            recorder.kill();
             launch();
-        } else if(msg.msg == "run fork") {
-            console.log("Executing fork: ", msg.exec)
-            child.kill();
-            forkJSS = forkJS(msg.exec);
-        } else if(msg.msg == "run extern") {
-            console.log("Executing extern script: ", msg.exec)
-            child.kill();
-            RunExternS = RunExtern(msg.exec);
+        } else if(msg.msg == "shutdown") {
+            recorder.kill();
+            process.exit(1);
         } else {
-            console.log(`Message from Icecast Recorder: ${msg}`);
+            console.log(msg);
         }
     });
 
-    child.on("close", function (code) {
+    recorder.on("close", function (code) {
         console.log("Icecast Recorder exited with code " + code);
-    });
-}
-
-function forkJS(exec) {
-    ForkJSS = fork("./index.js");
-    ForkJSS.on("message", function (msg) {
-        msg = JSON.parse(msg) || {msg: msg};
-        if(msg.msg == "launch index") {
-            ForkJSS.kill();
-            console.log("Launching index..")
-            child = launch();
-        } else {
-            console.log(`Message from Icecast Recorder: ${msg}`);
+        if(running) {
+            console.log("Restarting...");
+            launch();
         }
-    });
-
-    child.on("close", function (code) {
-        console.log("Icecast Recorder exited with code " + code);
-    });
-}
-function RunExtern(exec) {
-    RunExternS = spawn(exec);
-    RunExternS.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
-    });
-    
-    RunExternS.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
-    });
-    
-    RunExternS.on('close', (code) => {
-      console.log(`Auto Updater exited with code ${code}`);
-      Controller();
     });
 }
 

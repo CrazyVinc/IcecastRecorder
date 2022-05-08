@@ -1,19 +1,21 @@
 {
   "name": "icecastrecorder",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "Launcher.js",
   "scripts": {
+    "start": "node Launcher.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "VLGNL",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "console-stamp": "^3.0.4",
     "cron": "^1.8.2",
     "ejs": "^3.1.6",
     "express": "^4.17.3",
     "ffmpeg-static": "^4.4.1",
-    "moment": "^2.29.1"
+    "moment": "^2.29.1",
+    "tree-kill": "^1.2.2"
   }
 }

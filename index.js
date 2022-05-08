@@ -1,30 +1,57 @@
-var kill  = require('tree-kill');
+var kill = require("tree-kill");
 const http = require("http");
 const { exec } = require("child_process");
 const fs = require("fs");
-const {
-    promises: { readdir },
-} = require("fs");
-var cp = require("child_process");
-var pathToFfmpeg = require("ffmpeg-static");
 
-require("console-stamp")(console, "HH:MM:ss.l");
-
-let config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
 var express = require("express");
 let ejs = require("ejs");
 
 var moment = require("moment");
-
 var CronJob = require("cron");
+var pathToFfmpeg = require("ffmpeg-static");
+require("console-stamp")(console, "HH:MM:ss.l");
 
-process.on("message", function (message) {
-    console.log(`Message from main.js: ${message}`);
+let config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+
+if(config.Stream == "") {
+    console.error("Can't record nothing! Please fully configure the recorder in config.json.");
+    try {
+        process.send("shutdown");
+    } catch (e) {
+        process.exit(1);
+    };
+    
+}
+
+const myArgs = process.argv.slice(2);
+
+process.on("message", function (msg) {
+    console.log("Message from main.js:", msg);
+    msg = JSON.parse(msg);
+    if(msg.msg = "shutdown") {
+        running = false;
+        kill(RunExternS.pid);
+        setTimeout(function () {
+            process.send("shutdown");
+        }, 5000);
+    }
 });
 
+if (myArgs.length >= 1) {
+    setTimeout(function () {
+        running = false;
+        kill(RunExternS.pid);
+        setTimeout(function () {
+            process.exit(1);
+        }, 5000);
+    }, myArgs[0] * 1000);
+}
+
 var RunningFFMPEG = false;
+var running = true;
 var FFMPEGStarted;
 var RunExternS;
+
 
 function RunExtern() {
     FFMPEGStarted = new Date();
@@ -35,7 +62,7 @@ function RunExtern() {
         HH: ("0" + (moment().hour())).slice(-2),
         Min: ("0" + (moment().minute())).slice(-2),
         SS: ("0" + (moment().second())).slice(-2)
-    }
+    };
     RunExternS = exec(
         pathToFfmpeg +
             " -i " +
@@ -48,20 +75,21 @@ function RunExtern() {
              +'.mp3"'
     );
     RunExternS.stdout.on("data", (data) => {
-        console.log(`stdout: ${data}`);
+        console.log(`${data}`);
     });
-    console.log("started");
 
     RunExternS.stderr.on("data", (data) => {
-        console.log(`stderr: ${data}`);
+        console.log(`${data}`);
     });
 
     RunExternS.on("close", (code) => {
-        console.log(`Auto Updater exited with code ${code}`);
+        console.log(`Icecast recorder exited with code ${code}`);
         RunningFFMPEG = false;
-        job.start();
-        kill(RunExternS.pid);
-        RunExtern();
+        if(running) {
+            job.start();
+            kill(RunExternS.pid);
+            RunExtern();
+        }
     });
 }
 
@@ -106,7 +134,6 @@ var job = new CronJob.CronJob(
 
         RecPath.forEach((RecPath) => {
             if (!fs.existsSync(RecPath)) {
-                console.log("Make folder");
                 fs.mkdirSync(RecPath, { recursive: true });
             }
         });
@@ -118,6 +145,7 @@ var job = new CronJob.CronJob(
     true
 );
 
+
 const app = express();
 const server = http.createServer(app);
 
@@ -127,6 +155,10 @@ app.use("/", require("./src/routes"));
 app.use("/assets", express.static("assets"));
 
 app.set("port", 8085);
+
+
 server.listen(app.get("port"), () => {
     console.log("The LEDController server is running on port:", 8085);
 });
+
+console.log("started");

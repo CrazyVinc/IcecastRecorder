@@ -1,3 +1,6 @@
-# A Stream Recorder created with NodeJS & FFMPEG
+# Icecast Recorder.
 
-you must add the url in /bin/ and then your OS defined file.
+## Features
+- Record 24/7.
+- Record timer (Put a time in the first argument to enable the timer, in seconds).
+- Automatic File splitting and folder structure.
