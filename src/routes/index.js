@@ -31,7 +31,7 @@ app.get("/:YYYY([0-9]{4})", async function (req, res) {
         }
     });
 });
-app.get("/:YYYY([0-9]{4})/:MM([0-9]{2})", async function (req, res) {
+app.get("/:YYYY([0-9]{4})/:MM", async function (req, res) {
     res.render("DD", {
         Days: await getDirectories("./Recs/"+req.params.YYYY+"/"+req.params.MM),
         Selected: {
@@ -40,7 +40,7 @@ app.get("/:YYYY([0-9]{4})/:MM([0-9]{2})", async function (req, res) {
         }
     });
 });
-app.get("/:YYYY([0-9]{4})/:MM([0-9]{2})/:DD([0-9]{2})", async function (req, res) {
+app.get("/:YYYY([0-9]{4})/:MM/:DD([0-9]{2})", async function (req, res) {
     res.render("audio", {
         Days: await getFiles("./Recs/"+req.params.YYYY+"/"+req.params.MM+"/"+req.params.DD),
         Selected: {
@@ -51,7 +51,7 @@ app.get("/:YYYY([0-9]{4})/:MM([0-9]{2})/:DD([0-9]{2})", async function (req, res
     });
 });
 
-app.get("/:YYYY([0-9]{4})/:MM([0-9]{2})/:DD([0-9]{2})/:mp3", async function (req, res) {
+app.get("/:YYYY([0-9]{4})/:MM/:DD([0-9]{2})/:mp3", async function (req, res) {
     var RecPath = "Recs/"+req.params.YYYY+"/"+req.params.MM+"/"+req.params.DD+"/"+req.params.mp3;
     if(fs.existsSync(RecPath)) {
         res.sendFile(path.resolve(RecPath))
