@@ -12,6 +12,7 @@
   "dependencies": {
     "console-stamp": "^3.0.4",
     "cron": "^1.8.2",
+    "deepmerge": "^4.2.2",
     "ejs": "^3.1.6",
     "express": "^4.17.3",
     "ffmpeg-static": "^4.4.1",
