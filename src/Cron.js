@@ -57,7 +57,6 @@ var RunRecorder = new CronJob.CronJob(
             RunExtern();
             return;
         }
-        kill(RunExternS.pid);
     },
     null,
     true,
