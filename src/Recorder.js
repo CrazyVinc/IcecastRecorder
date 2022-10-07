@@ -8,6 +8,7 @@ var pathToFfmpeg = require("ffmpeg-static");
 
 
 const config = require("./config").config;
+const lang = require("./lang");
 require("./globals");
 
 function RunExtern() {
@@ -21,8 +22,8 @@ function RunExtern() {
         SS: ("0" + (moment().second())).slice(-2)
     };
 
-    OnlyLetterNumber = /([a-zA-Z0-9-_]*)/g;
-    time.MM = config.language.folders.months[(moment().month() + 1)].match(OnlyLetterNumber)[0];    
+    var OnlyLetterNumber = /([a-zA-Z0-9-_]*)/g;
+    time.MM = lang.folders.months[(moment().month() + 1)].match(OnlyLetterNumber)[0];    
 
     RunExternS = exec(
         pathToFfmpeg +
@@ -31,9 +32,9 @@ function RunExtern() {
             ' "Recs/' +
             moment().year() + "/" + 
             time.MM + "/" +
-            time.DD + "/" + config.language.filename.prefix +
-            time.HH + config.language.filename.hour_minute + time.Min + 
-            config.language.filename.minute_second + time.SS
+            time.DD + "/" + lang.filename.prefix +
+            time.HH + lang.filename.hour_minute + time.Min + 
+            lang.filename.minute_second + time.SS
              +'.mp3"'
     );
     RunExternS.stdout.on("data", (data) => {
@@ -48,7 +49,7 @@ function RunExtern() {
         console.log(`Icecast recorder exited with code ${code}`);
         RunningFFMPEG = false;
         if(running) {
-            job.start();
+            global.job.start();
 
             kill(RunExternS.pid);
             RunExtern();
